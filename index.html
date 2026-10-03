@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f3ea">
+  <meta name="description" content="Transparent gold-rate dashboard with real upstream market data, INR presentation, India time, locally observed monthly highs/lows, and browser price alarms.">
+  <title>Gold Market — India INR</title>
+  <style>
+    :root{
+      --bg:#f7f3ea;--paper:#fffdf8;--ink:#1e1d1a;--muted:#6f6a60;--line:#dfd8ca;
+      --accent:#8a641b;--accent-soft:#efe4c9;--good:#176b3a;--good-bg:#e7f4eb;
+      --warn:#915f00;--warn-bg:#fff2cf;--bad:#9a2f2f;--bad-bg:#fde9e9;--shadow:0 12px 35px rgba(47,38,24,.08);
+      --radius:18px;--max:1180px
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:linear-gradient(180deg,#f7f3ea 0%,#fbf8f1 45%,#f6f1e7 100%);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .wrap{width:min(var(--max),calc(100% - 28px));margin:auto}
+    header{padding:28px 0 18px}
+    .topbar{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+    .brand h1{margin:0;font-size:clamp(28px,5vw,46px);letter-spacing:-.04em;font-family:Georgia,serif;font-weight:700}
+    .brand p{margin:7px 0 0;color:var(--muted);max-width:700px}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{border:1px solid var(--line);background:var(--paper);padding:10px 14px;border-radius:12px;color:var(--ink);box-shadow:0 2px 9px rgba(0,0,0,.03)}
+    .btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .statusbar{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap}
+    .pill{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:800;letter-spacing:.02em;border:1px solid transparent}
+    .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+    .pill.good{color:var(--good);background:var(--good-bg);border-color:#cce7d5}.pill.warn{color:var(--warn);background:var(--warn-bg);border-color:#f1d9a0}.pill.bad{color:var(--bad);background:var(--bad-bg);border-color:#efc9c9}.pill.neutral{color:var(--muted);background:#f0ede6;border-color:var(--line)}
+    .grid{display:grid;gap:14px}
+    .hero-grid{grid-template-columns:1fr}
+    .card{background:rgba(255,253,248,.9);border:1px solid rgba(223,216,202,.9);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+    .section-title{display:flex;justify-content:space-between;gap:12px;align-items:baseline;margin-bottom:14px}
+    .section-title h2{font-size:18px;margin:0;font-family:Georgia,serif}.section-title small{color:var(--muted)}
+    .rates{display:grid;grid-template-columns:1fr;gap:12px}
+    .rate-card{border:1px solid var(--line);border-radius:16px;padding:16px;background:#fffdfa}
+    .rate-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+    .purity{font-weight:900}.purity small{display:block;color:var(--muted);font-weight:700;margin-top:2px}
+    .price-big{font-size:clamp(24px,7vw,42px);font-weight:900;letter-spacing:-.035em;margin:8px 0 2px;word-break:break-word}
+    .subprice{font-size:14px;color:var(--muted)}
+    .meta{margin-top:12px;display:grid;gap:5px;color:var(--muted);font-size:12px}
+    .meta strong{color:var(--ink)}
+    .notice{padding:14px;border-radius:14px;border:1px dashed var(--line);background:#faf7ef;color:var(--muted);font-size:13px}
+    .notice.bad{border-color:#ebcaca;background:var(--bad-bg);color:#6f2525}
+    .notice.warn{border-color:#ecd39e;background:var(--warn-bg);color:#6b4d00}
+    .clock{display:grid;gap:7px}.clock-value{font-size:clamp(30px,7vw,54px);font-weight:900;letter-spacing:-.045em;font-variant-numeric:tabular-nums}.clock-date{font-size:15px;color:var(--muted)}
+    .kv{display:grid;grid-template-columns:1fr;gap:8px}.kv div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #eee9df;padding:8px 0;font-size:13px}.kv div:last-child{border-bottom:0}.kv span{color:var(--muted)}.kv b{text-align:right}
+    .two-col{grid-template-columns:1fr}
+    .stat-grid{display:grid;grid-template-columns:1fr;gap:10px}.stat{padding:13px;border:1px solid var(--line);border-radius:14px;background:#fffdfa}.stat h3{margin:0;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.stat .v{font-size:24px;font-weight:900;margin-top:6px}.stat .d{font-size:12px;color:var(--muted);margin-top:5px}
+    form{display:grid;gap:10px}.fields{display:grid;grid-template-columns:1fr;gap:10px}.field label{display:block;font-size:12px;font-weight:800;color:var(--muted);margin-bottom:5px}.field input,.field select{width:100%;border:1px solid var(--line);background:#fffdfa;border-radius:11px;padding:10px 11px;color:var(--ink)}.field input:focus,.field select:focus{outline:2px solid rgba(138,100,27,.28);outline-offset:1px}.checkbox{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+    .alarm-list{display:grid;gap:8px;margin-top:13px}.alarm{border:1px solid var(--line);border-radius:13px;padding:11px 12px;display:flex;justify-content:space-between;gap:10px;align-items:center;background:#fffdfa}.alarm-main{min-width:0}.alarm-title{font-weight:900;font-size:13px}.alarm-meta{font-size:11px;color:var(--muted);margin-top:3px}.alarm button{border:0;background:transparent;color:var(--bad);font-weight:900;padding:7px}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:13px}.table{border-collapse:collapse;width:100%;min-width:700px;font-size:12px}.table th,.table td{padding:9px 10px;border-bottom:1px solid #eee9df;text-align:left;white-space:nowrap}.table th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:#fbf8f2;position:sticky;top:0}.table tr:last-child td{border-bottom:0}
+    footer{padding:26px 0 40px;color:var(--muted);font-size:12px}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.hidden{display:none!important}
+    .spinner{width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:-2px}@keyframes spin{to{transform:rotate(360deg)}}
+    @media (min-width:700px){.rates{grid-template-columns:repeat(3,1fr)}.two-col{grid-template-columns:1fr 1fr}.stat-grid{grid-template-columns:repeat(2,1fr)}.fields{grid-template-columns:repeat(4,1fr)}.hero-grid{grid-template-columns:1.35fr .65fr}}
+    @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.spinner{animation:none}}
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <h1>GOLD MARKET — INDIA</h1>
+        <p>Real upstream data only. INR presentation, transparent timestamps, locally observed monthly statistics, and price alarms.</p>
+      </div>
+      <div class="actions">
+        <button class="btn" id="enableNotifications">Enable Notifications</button>
+        <button class="btn primary" id="refreshBtn">Refresh</button>
+      </div>
+    </div>
+    <div class="statusbar" id="statusBar" aria-live="polite">
+      <span class="pill neutral"><span class="dot"></span>Data: UNAVAILABLE</span>
+      <span class="pill neutral"><span class="dot"></span>API: NOT CHECKED</span>
+      <span class="pill neutral"><span class="dot"></span>Source: NOT CONFIGURED</span>
+    </div>
+  </header>
+
+  <main class="wrap grid">
+    <section class="grid hero-grid">
+      <div class="card">
+        <div class="section-title"><h2>LIVE GOLD RATE</h2><small id="rateUpdatedLabel">No successful retrieval yet</small></div>
+        <div id="globalNotice" class="notice">LIVE GOLD DATA UNAVAILABLE — configure a backend URL and a real upstream provider key on the backend.</div>
+        <div class="rates" id="rates" aria-live="polite" aria-busy="false"></div>
+      </div>
+      <div class="card clock">
+        <div class="section-title"><h2>LIVE INDIA TIME</h2><small>Asia/Kolkata</small></div>
+        <div class="clock-value" id="clockTime">—</div>
+        <div class="clock-date" id="clockDate">—</div>
+        <div class="kv">
+          <div><span>Region</span><b>India / Uttar Pradesh</b></div>
+          <div><span>Time zone</span><b>IST · Asia/Kolkata</b></div>
+          <div><span>Clock source</span><b id="clockSource">Browser system clock</b></div>
+          <div><span>Last server sync</span><b id="clockSync">—</b></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title"><h2>DATA SOURCE</h2><small>Secrets never belong here</small></div>
+      <div class="fields">
+        <div class="field" style="grid-column:1 / -1"><label for="backendUrl">Backend base URL</label><input id="backendUrl" placeholder="Same-origin or https://your-backend.example.com" autocomplete="url"></div>
+        <div class="field"><label for="refreshInterval">Refresh interval</label><select id="refreshInterval"><option value="300">5 minutes</option><option value="600" selected>10 minutes</option><option value="900">15 minutes</option></select></div>
+        <div class="field" style="display:flex;align-items:flex-end"><button class="btn primary" id="saveSettings" style="width:100%">Save Settings</button></div>
+      </div>
+      <div class="kv" style="margin-top:12px">
+        <div><span>Provider</span><b id="sourceName">Not configured</b></div>
+        <div><span>Market category</span><b id="sourceCategory">Not configured</b></div>
+        <div><span>Provider time</span><b id="providerTime">—</b></div>
+        <div><span>Server retrieval</span><b id="retrievedTime">—</b></div>
+        <div><span>Cache</span><b id="cacheStatus">—</b></div>
+        <div><span>Price methodology</span><b id="priceMethod">—</b></div>
+        <div><span>Provider delay</span><b id="providerDelay">—</b></div>
+        <div><span>Market open/closed</span><b id="marketState">Not supplied</b></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title"><h2>MONTHLY HIGH / LOW</h2><small>Observed locally from successful fresh/recent retrievals</small></div>
+      <div id="monthlyNotice" class="notice">No locally observed values yet. This is not an authoritative market high/low.</div>
+      <div class="stat-grid" id="monthlyStats"></div>
+    </section>
+
+    <section class="grid two-col">
+      <div class="card">
+        <div class="section-title"><h2>PRICE ALARMS</h2><small>Fresh data only</small></div>
+        <form id="alarmForm">
+          <div class="fields">
+            <div class="field"><label for="alarmPurity">Purity</label><select id="alarmPurity"><option value="24k_999">24K / 999</option><option value="22k_916">22K / 916</option><option value="18k_750">18K / 750</option></select></div>
+            <div class="field"><label for="alarmDirection">Condition</label><select id="alarmDirection"><option value="below">Below</option><option value="above">Above</option></select></div>
+            <div class="field"><label for="alarmUnit">Unit</label><select id="alarmUnit"><option value="per10g">₹ / 10g</option><option value="perGram">₹ / gram</option></select></div>
+            <div class="field"><label for="alarmThreshold">Threshold (INR)</label><input id="alarmThreshold" type="number" min="0.01" step="0.01" required inputmode="decimal" placeholder="140000"></div>
+          </div>
+          <label class="checkbox"><input id="alarmRecurring" type="checkbox"> Recurring: trigger again after price leaves and re-enters the condition</label>
+          <button class="btn primary" type="submit">Add Alarm</button>
+        </form>
+        <div class="alarm-list" id="alarmList"></div>
+        <div class="notice warn" style="margin-top:12px">Browser alarms are strongest while this page can execute. Notifications usually require permission. A static page cannot guarantee an alert while the browser/device is fully closed; guaranteed background push needs additional push/backend infrastructure.</div>
+      </div>
+
+      <div class="card">
+        <div class="section-title"><h2>HISTORICAL DATA</h2><small>Local observation store</small></div>
+        <div class="table-wrap"><table class="table"><thead><tr><th>Month</th><th>24K High</th><th>High Date</th><th>24K Low</th><th>Low Date</th><th>22K High</th><th>22K Low</th><th>18K High</th><th>18K Low</th></tr></thead><tbody id="historyBody"><tr><td colspan="9">No local observations yet.</td></tr></tbody></table></div>
+        <div class="notice" style="margin-top:12px">Historical values shown here are locally observed by this browser unless a future backend implementation supplies authoritative historical endpoints. Gaps can occur when the page is offline, asleep, closed, or outside refresh windows.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    This application never creates market prices. It displays what the configured upstream provider returns, with clearly labeled direct/derived values. Global spot, Indian authority/reference feeds, and jewellery retail pricing are distinct categories.
+  </footer>
+
+  <script>
+    'use strict';
+    const CONFIG = Object.freeze({
+      defaultBackend: '',
+      timezone: 'Asia/Kolkata',
+      liveMaxAgeSeconds: 180,
+      recentMaxAgeSeconds: 900,
+      refreshSeconds: 600,
+      maxStoredObservations: 20000
+    });
+    const state = {
+      inFlight: null,
+      latest: null,
+      serverClockOffsetMs: 0,
+      lastIndiaDate: null,
+      refreshTimer: null,
+      alarms: [],
+      notifiedAlarmIds: new Set(),
+      db: null
+    };
+
+    const $ = id => document.getElementById(id);
+    const backendUrl = $('backendUrl');
+    const refreshInterval = $('refreshInterval');
+    const refreshBtn = $('refreshBtn');
+
+    function escapeHtml(value){
+      return String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+    }
+    function formatINR(value, digits=2){
+      if (!Number.isFinite(Number(value))) return '—';
+      return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',minimumFractionDigits:digits,maximumFractionDigits:digits}).format(Number(value));
+    }
+    function formatDateTime(iso){
+      if (!iso) return '—';
+      const d = new Date(iso); if (Number.isNaN(d.getTime())) return 'Invalid timestamp';
+      return new Intl.DateTimeFormat('en-IN',{timeZone:CONFIG.timezone,year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true,timeZoneName:'short'}).format(d);
+    }
+    function indiaDateKey(ms=Date.now()+state.serverClockOffsetMs){
+      const parts = new Intl.DateTimeFormat('en-CA',{timeZone:CONFIG.timezone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(ms));
+      const map = Object.fromEntries(parts.filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
+      return `${map.year}-${map.month}-${map.day}`;
+    }
+    function indiaMonthKey(iso){
+      const d = new Date(iso); if (Number.isNaN(d.getTime())) return 'unknown';
+      const parts = new Intl.DateTimeFormat('en-CA',{timeZone:CONFIG.timezone,year:'numeric',month:'2-digit'}).formatToParts(d);
+      const map = Object.fromEntries(parts.filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
+      return `${map.year}-${map.month}`;
+    }
+    function classifyStatus(providerTimestamp, retrievedAt){
+      const p = providerTimestamp ? new Date(providerTimestamp).getTime() : NaN;
+      const r = new Date(retrievedAt).getTime();
+      if (!Number.isFinite(r)) return {status:'UNAVAILABLE',ageSeconds:null};
+      if (!Number.isFinite(p)) return {status:'RECENT',ageSeconds:null};
+      const age = Math.max(0,(r-p)/1000);
+      if (age <= CONFIG.liveMaxAgeSeconds) return {status:'LIVE',ageSeconds:age};
+      if (age <= CONFIG.recentMaxAgeSeconds) return {status:'RECENT',ageSeconds:age};
+      return {status:'STALE',ageSeconds:age};
+    }
+    function pill(status,label){
+      const cls = status==='LIVE'?'good':status==='RECENT'?'warn':status==='STALE'?'bad':'neutral';
+      return `<span class="pill ${cls}"><span class="dot"></span>${escapeHtml(label||status)}</span>`;
+    }
+
+    function updateStatusBar(data, apiState='OK'){
+      const status = data?.status || 'UNAVAILABLE';
+      const src = data?.source || 'NOT CONFIGURED';
+      $('statusBar').innerHTML = `${pill(status,'Data: '+status)} ${pill(apiState==='OK'?'LIVE':'ERROR','API: '+apiState)} ${pill(data?.source?'good':'neutral','Source: '+src)}`;
+    }
+
+    function renderRates(data){
+      const rates = data?.rates || {};
+      const definitions = [
+        ['24k_999','24K','999'],['22k_916','22K','916'],['18k_750','18K','750']
+      ];
+      $('rates').innerHTML = definitions.map(([key,purity,fineness])=>{
+        const r = rates[key] || {};
+        const kind = r.type || 'UNAVAILABLE';
+        const kindPill = kind==='DIRECT' ? pill('LIVE','DIRECT') : kind==='DERIVED' ? pill('RECENT','DERIVED') : pill('UNAVAILABLE',kind);
+        return `<article class="rate-card">
+          <div class="rate-head"><div class="purity">${purity}<small>${fineness}</small></div>${kindPill}</div>
+          <div class="price-big">${formatINR(r.perGram)}</div>
+          <div class="subprice">per gram · ${formatINR(r.per10g)} per 10g</div>
+          <div class="meta"><div>Status: <strong>${escapeHtml(data?.status||'UNAVAILABLE')}</strong></div><div>Source: <strong>${escapeHtml(data?.source||'—')}</strong></div><div>Provider time: <strong>${escapeHtml(formatDateTime(data?.providerTimestamp))}</strong></div><div>Retrieved: <strong>${escapeHtml(formatDateTime(data?.retrievedAt))}</strong></div><div>Type: <strong>${escapeHtml(kind)}</strong></div></div>
+        </article>`;
+      }).join('');
+    }
+
+    function renderSource(data){
+      $('sourceName').textContent = data?.source || 'Not configured';
+      $('sourceCategory').textContent = data?.marketCategory || 'Not configured';
+      $('providerTime').textContent = formatDateTime(data?.providerTimestamp);
+      $('retrievedTime').textContent = formatDateTime(data?.retrievedAt);
+      $('cacheStatus').textContent = data?.cacheStatus || '—';
+      $('priceMethod').textContent = data?.methodology || '—';
+      $('marketState').textContent = data?.marketState || 'Not supplied';
+      const delay = data?.providerDelaySeconds;
+      $('providerDelay').textContent = Number.isFinite(Number(delay)) ? `~${Math.round(Number(delay))} seconds` : 'Not supplied';
+      $('rateUpdatedLabel').textContent = data?.retrievedAt ? `Retrieved ${formatDateTime(data.retrievedAt)}` : 'No successful retrieval yet';
+      $('clockSource').textContent = data?.retrievedAt ? 'Browser clock + server offset' : 'Browser system clock';
+      $('clockSync').textContent = data?.retrievedAt ? formatDateTime(data.retrievedAt) : '—';
+    }
+
+    function showGlobalNotice(text, type='neutral'){
+      const el = $('globalNotice'); el.className = 'notice'+(type==='bad'?' bad':type==='warn'?' warn':''); el.textContent=text;
+    }
+
+    function openDB(){
+      return new Promise((resolve,reject)=>{
+        const req=indexedDB.open('gold-market-local-v1',1);
+        req.onupgradeneeded=()=>{
+          const db=req.result;
+          if(!db.objectStoreNames.contains('observations')){const s=db.createObjectStore('observations',{keyPath:'id'});s.createIndex('month','month',{unique:false});s.createIndex('observedAt','observedAt',{unique:false});}
+          if(!db.objectStoreNames.contains('alarms')) db.createObjectStore('alarms',{keyPath:'id'});
+        };
+        req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+      });
+    }
+    async function dbPut(storeName,value){return new Promise((resolve,reject)=>{const tx=state.db.transaction(storeName,'readwrite');tx.objectStore(storeName).put(value);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});}
+    async function dbDelete(storeName,key){return new Promise((resolve,reject)=>{const tx=state.db.transaction(storeName,'readwrite');tx.objectStore(storeName).delete(key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});}
+    async function dbAll(storeName){return new Promise((resolve,reject)=>{const tx=state.db.transaction(storeName,'readonly');const req=tx.objectStore(storeName).getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error);});}
+
+    async function saveObservation(data){
+      if(!data || !['LIVE','RECENT'].includes(data.status)) return;
+      const providerTs = data.providerTimestamp || data.retrievedAt;
+      const id = `${data.source||'source'}|${providerTs}`;
+      const obs={id,month:indiaMonthKey(providerTs),observedAt:providerTs,source:data.source,rates:data.rates};
+      try{await dbPut('observations',obs);}catch(e){console.warn('Observation storage failed',e)}
+    }
+
+    function monthlyGroups(observations){
+      const groups={};
+      for(const obs of observations){if(!obs.month)continue;groups[obs.month] ||= [];groups[obs.month].push(obs)}
+      for(const arr of Object.values(groups)) arr.sort((a,b)=>new Date(a.observedAt)-new Date(b.observedAt));
+      return groups;
+    }
+    function monthStats(obs){
+      const purities=['24k_999','22k_916','18k_750'];
+      const out={};
+      for(const k of purities){
+        let high=null,low=null;
+        for(const o of obs){const v=Number(o?.rates?.[k]?.per10g);if(!Number.isFinite(v))continue;const point={v,t:o.observedAt};if(!high||v>high.v)high=point;if(!low||v<low.v)low=point;}
+        out[k]={high,low};
+      }
+      return out;
+    }
+    async function renderHistory(){
+      let observations=[];try{observations=await dbAll('observations')}catch(e){console.warn(e)}
+      const groups=monthlyGroups(observations);const months=Object.keys(groups).sort().reverse();
+      const body=$('historyBody');
+      if(!months.length){body.innerHTML='<tr><td colspan="9">No local observations yet.</td></tr>';return;}
+      body.innerHTML=months.map(month=>{
+        const s=monthStats(groups[month]); const label=new Intl.DateTimeFormat('en-IN',{month:'long',year:'numeric',timeZone:CONFIG.timezone}).format(new Date(month+'-01T00:00:00Z'));
+        const cell=(x)=>x?formatINR(x.v):'—'; const date=(x)=>x?formatDateTime(x.t):'—';
+        return `<tr><td>${escapeHtml(label)}</td><td>${cell(s['24k_999'].high)}</td><td>${date(s['24k_999'].high)}</td><td>${cell(s['24k_999'].low)}</td><td>${date(s['24k_999'].low)}</td><td>${cell(s['22k_916'].high)}</td><td>${cell(s['22k_916'].low)}</td><td>${cell(s['18k_750'].high)}</td><td>${cell(s['18k_750'].low)}</td></tr>`;
+      }).join('');
+      renderCurrentMonth(groups[indiaMonthKey(new Date().toISOString())]);
+    }
+    function renderCurrentMonth(obs=[]){
+      const stats=monthStats(obs||[]), box=$('monthlyStats');
+      const rows=[['24K','24k_999'],['22K','22k_916'],['18K','18k_750']];
+      box.innerHTML=rows.map(([label,k])=>{
+        const h=stats[k].high,l=stats[k].low;
+        return `<div class="stat"><h3>${label} highest observed / 10g</h3><div class="v">${h?formatINR(h.v):'—'}</div><div class="d">${h?formatDateTime(h.t):'No observation'}</div></div><div class="stat"><h3>${label} lowest observed / 10g</h3><div class="v">${l?formatINR(l.v):'—'}</div><div class="d">${l?formatDateTime(l.t):'No observation'}</div></div>`;
+      }).join('');
+      $('monthlyNotice').textContent=obs?.length ? 'Highest observed / Lowest observed — based only on values this browser successfully stored. This is not an authoritative absolute monthly high/low.' : 'No locally observed values yet. This is not an authoritative market high/low.';
+    }
+
+    async function loadAlarms(){try{state.alarms=await dbAll('alarms')}catch(e){state.alarms=[]}renderAlarms()}
+    function renderAlarms(){
+      const el=$('alarmList');
+      if(!state.alarms.length){el.innerHTML='<div class="notice">No alarms configured.</div>';return}
+      el.innerHTML=state.alarms.map(a=>`<div class="alarm"><div class="alarm-main"><div class="alarm-title">${escapeHtml(a.purityLabel)} ${a.direction==='below'?'below':'above'} ${formatINR(a.threshold)} ${a.unit==='per10g'?'/ 10g':'/ gram'}</div><div class="alarm-meta">${a.recurring?'Recurring':'One-time'} · ${a.enabled?'Enabled':'Disabled'} · Last trigger: ${a.lastTriggeredAt?formatDateTime(a.lastTriggeredAt):'Never'}</div></div><button data-alarm-id="${escapeHtml(a.id)}" aria-label="Delete alarm">Delete</button></div>`).join('');
+    }
+
+    function canTriggerFromData(data){return data && data.success && ['LIVE','RECENT'].includes(data.status) && data.status!=='STALE'}
+    function alarmValue(data,a){const node=data?.rates?.[a.purity];if(!node)return NaN;return Number(node[a.unit]);}
+    async function checkAlarms(data){
+      if(!canTriggerFromData(data)) return;
+      for(const alarm of state.alarms){
+        if(!alarm.enabled)continue;
+        const value=alarmValue(data,alarm);if(!Number.isFinite(value))continue;
+        const condition=alarm.direction==='below' ? value<=alarm.threshold : value>=alarm.threshold;
+        if(condition && alarm.lastCondition!==true){
+          await triggerAlarm(alarm,value,data);
+          alarm.lastTriggeredAt=data.retrievedAt || new Date().toISOString();
+          if(!alarm.recurring) alarm.enabled=false;
+        }
+        alarm.lastCondition=condition;
+        await dbPut('alarms',alarm);
+      }
+      state.alarms=await dbAll('alarms');renderAlarms();
+    }
+    async function triggerAlarm(alarm,value,data){
+      const title='GOLD PRICE ALARM TRIGGERED';
+      const body=`${alarm.purityLabel}: ${formatINR(value)} ${alarm.unit==='per10g'?'/ 10g':'/ gram'} · threshold ${formatINR(alarm.threshold)} · ${formatDateTime(data.retrievedAt)}`;
+      showGlobalNotice(body,'warn');
+      try{await navigator.clipboard?.writeText(body)}catch{}
+      try{
+        if('Notification' in window && Notification.permission==='granted') new Notification(title,{body,tag:'gold-alarm'});
+      }catch{}
+      try{const C=window.AudioContext||window.webkitAudioContext;if(C){const ctx=new C();const osc=ctx.createOscillator();const gain=ctx.createGain();osc.frequency.value=880;gain.gain.value=.04;osc.connect(gain);gain.connect(ctx.destination);osc.start();setTimeout(()=>{osc.stop();ctx.close().catch(()=>{})},350)}}catch{}
+    }
+
+    async function fetchGold(reason='manual'){
+      if(state.inFlight)return state.inFlight;
+      const base=(backendUrl.value||localStorage.getItem('goldBackendUrl')||CONFIG.defaultBackend||'').trim().replace(/\/$/,'');
+      if(base && !/^https?:\/\//i.test(base) && !base.startsWith('/')){showGlobalNotice('Backend URL must use http://, https://, or same-origin relative paths.','bad');return}
+      const endpoint=(base?base:'')+'/api/gold';
+      $('rates').setAttribute('aria-busy','true');refreshBtn.disabled=true;refreshBtn.innerHTML='<span class="spinner"></span> Refreshing';
+      state.inFlight=(async()=>{
+        try{
+          const started=Date.now();
+          const res=await fetch(endpoint,{method:'GET',headers:{Accept:'application/json'},cache:'no-store'});
+          let data=null;try{data=await res.json()}catch{throw new Error('Backend returned invalid JSON')}
+          if(!res.ok || !data || data.success!==true){
+            const reason=data?.message || data?.code || `HTTP ${res.status}`;
+            throw new Error(reason);
+          }
+          const localRetrieved = new Date(data.retrievedAt || Date.now()).getTime();
+          if(!Number.isFinite(localRetrieved))throw new Error('Invalid retrievedAt timestamp');
+          if(data.providerTimestamp && !Number.isFinite(new Date(data.providerTimestamp).getTime()))throw new Error('Invalid provider timestamp');
+          const keys=['24k_999','22k_916','18k_750'];
+          for(const k of keys){const r=data?.rates?.[k];if(!r || !Number.isFinite(Number(r.perGram)) || !Number.isFinite(Number(r.per10g)) || Number(r.perGram)<=0 || Number(r.per10g)<=0)throw new Error(`Invalid price data for ${k}`)}
+          if(data.currency!=='INR')throw new Error('Backend contract currency is not INR');
+          if(data.serverNow){const serverNowMs=new Date(data.serverNow).getTime();if(Number.isFinite(serverNowMs))state.serverClockOffsetMs=serverNowMs-Date.now()}
+          const classified=classifyStatus(data.providerTimestamp,data.retrievedAt);
+          data.status=classified.status;data.providerAgeSeconds=classified.ageSeconds;data.clientFetchMs=Date.now()-started;
+          state.latest=data;
+          updateStatusBar(data,'OK');renderRates(data);renderSource(data);await saveObservation(data);await renderHistory();await checkAlarms(data);
+          showGlobalNotice(data.status==='STALE'?'STALE DATA — provider timestamp is outside the configured freshness window.':data.status==='RECENT'?'RECENT DATA — provider timestamp is older than the live window.':'Live/recent data received from the configured provider.',data.status==='STALE'?'bad':data.status==='RECENT'?'warn':'neutral');
+          return data;
+        }catch(err){
+          updateStatusBar(null,'ERROR');showGlobalNotice(`LIVE GOLD DATA UNAVAILABLE — ${err.message || 'request failed'}`,'bad');$('rateUpdatedLabel').textContent='No usable fresh response';
+          console.warn('Gold API request failed',reason,err);
+          return null;
+        }finally{refreshBtn.disabled=false;refreshBtn.textContent='Refresh';$('rates').setAttribute('aria-busy','false');state.inFlight=null}
+      })();
+      return state.inFlight;
+    }
+
+    function tickClock(){
+      const now=Date.now()+state.serverClockOffsetMs;
+      const d=new Date(now);
+      $('clockTime').textContent=new Intl.DateTimeFormat('en-IN',{timeZone:CONFIG.timezone,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).format(d)+' IST';
+      $('clockDate').textContent=new Intl.DateTimeFormat('en-IN',{timeZone:CONFIG.timezone,weekday:'long',day:'2-digit',month:'long',year:'numeric'}).format(d);
+      const dateKey=indiaDateKey(now);
+      if(!state.lastIndiaDate)state.lastIndiaDate=dateKey;
+      if(dateKey!==state.lastIndiaDate){state.lastIndiaDate=dateKey;onNewIndiaDay()}
+    }
+    async function onNewIndiaDay(){
+      await fetchGold('midnight');await renderHistory();
+    }
+
+    function scheduleRefresh(){
+      clearInterval(state.refreshTimer);const seconds=Number(refreshInterval.value)||CONFIG.refreshSeconds;state.refreshTimer=setInterval(()=>{if(document.visibilityState==='visible')fetchGold('interval')},seconds*1000);
+    }
+
+    $('saveSettings').addEventListener('click',()=>{localStorage.setItem('goldBackendUrl',backendUrl.value.trim().replace(/\/$/,''));localStorage.setItem('goldRefreshSeconds',refreshInterval.value);scheduleRefresh();fetchGold('settings')});
+    refreshBtn.addEventListener('click',()=>fetchGold('manual'));
+    $('enableNotifications').addEventListener('click',async()=>{if(!('Notification' in window)){alert('Web Notifications are not supported by this browser.');return}const p=await Notification.requestPermission();alert(p==='granted'?'Notifications enabled.':'Notification permission was not granted.')});
+    $('alarmForm').addEventListener('submit',async e=>{
+      e.preventDefault();const threshold=Number($('alarmThreshold').value);if(!Number.isFinite(threshold)||threshold<=0)return;
+      const purity=$('alarmPurity').value;const labels={'24k_999':'24K / 999','22k_916':'22K / 916','18k_750':'18K / 750'};
+      const alarm={id:crypto.randomUUID?crypto.randomUUID():String(Date.now())+'-'+Math.random(),purity,direction:$('alarmDirection').value,unit:$('alarmUnit').value,threshold,recurring:$('alarmRecurring').checked,enabled:true,lastCondition:false,lastTriggeredAt:null,purityLabel:labels[purity]};
+      await dbPut('alarms',alarm);state.alarms=await dbAll('alarms');renderAlarms();e.target.reset();
+    });
+    $('alarmList').addEventListener('click',async e=>{const id=e.target?.dataset?.alarmId;if(id){await dbDelete('alarms',id);state.alarms=await dbAll('alarms');renderAlarms()}});
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')fetchGold('visibility')});
+    window.addEventListener('online',()=>fetchGold('network-online'));
+    window.addEventListener('focus',()=>fetchGold('focus'));
+
+    async function init(){
+      backendUrl.value=localStorage.getItem('goldBackendUrl')||CONFIG.defaultBackend;
+      refreshInterval.value=localStorage.getItem('goldRefreshSeconds')||String(CONFIG.refreshSeconds);
+      try{state.db=await openDB()}catch(e){showGlobalNotice('Browser storage unavailable; monthly observations and alarm settings may not persist.','warn')}
+      await loadAlarms();await renderHistory();tickClock();setInterval(tickClock,1000);scheduleRefresh();await fetchGold('startup');
+    }
+    init();
+  </script>
+</body>
+</html>
